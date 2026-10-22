@@ -1,0 +1,19 @@
+<resources>
+    <!-- Light Palette (Warm Porcelain & Sage Botanical) -->
+    <color name="aura_porcelain">#F5F1E8</color>
+    <color name="aura_ivory">#FFFCF5</color>
+    <color name="aura_sage">#77866A</color>
+    <color name="aura_deep_botanical">#414B3D</color>
+    <color name="aura_stone">#B9AE9A</color>
+    <color name="aura_amber">#C88C4C</color>
+    <color name="aura_charcoal">#292C27</color>
+    <color name="aura_secondary_text">#77786F</color>
+    <color name="aura_divider">#E4DED2</color>
+
+    <!-- Dark Palette -->
+    <color name="aura_dark_bg">#20241F</color>
+    <color name="aura_dark_surface">#2B3029</color>
+    <color name="aura_dark_primary">#B9C8A8</color>
+    <color name="aura_dark_text">#EDEBE4</color>
+    <color name="aura_dark_divider">#383F35</color>
+</resources>

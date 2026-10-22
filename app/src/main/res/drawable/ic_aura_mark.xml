@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Leaf 1 (Top / Right curve) -->
+    <path
+        android:fillColor="#77866A"
+        android:pathData="M24,4 C27,11 34,16 38,22 C34,26 29,27 25,24 C23,20 22,12 24,4 Z" />
+    <!-- Leaf 2 (Bottom / Right curve) -->
+    <path
+        android:fillColor="#414B3D"
+        android:pathData="M38,25 C35,32 29,38 22,42 C20,37 20,31 23,27 C26,24 33,23 38,25 Z" />
+    <!-- Leaf 3 (Left curve) -->
+    <path
+        android:fillColor="#C88C4C"
+        android:pathData="M18,39 C12,35 8,28 8,20 C14,19 19,22 21,26 C23,30 22,36 18,39 Z" />
+    <!-- Central negative-space opening circle accent -->
+    <path
+        android:fillColor="#F5F1E8"
+        android:pathData="M24,24m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+</vector>

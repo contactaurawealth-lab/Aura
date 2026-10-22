@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Aura" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/aura_porcelain</item>
+        <item name="android:navigationBarColor">@color/aura_porcelain</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/aura_porcelain</item>
+    </style>
+</resources>
