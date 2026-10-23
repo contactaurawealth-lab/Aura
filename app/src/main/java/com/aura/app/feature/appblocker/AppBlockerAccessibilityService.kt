@@ -6,6 +6,7 @@ import android.view.accessibility.AccessibilityEvent
 import com.aura.app.AuraApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -20,6 +21,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName == this.packageName) return // Do not intercept self
+        if (AppBlockerBypass.isBypassed(packageName)) return // Temporary pass active
 
         // Debounce rapid window changes
         val now = System.currentTimeMillis()
@@ -57,4 +59,9 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
 }

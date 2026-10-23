@@ -24,7 +24,7 @@ class AuraMediaService : MediaSessionService() {
             .setAudioAttributes(audioAttributes, true) // Handles audio focus automatically
             .setHandleAudioBecomingNoisy(true) // Pauses on headphones disconnect
             .build().apply {
-                repeatMode = Player.REPEAT_MODE_ONE // Seamless ambient loop
+                repeatMode = Player.REPEAT_MODE_OFF
             }
 
         player?.let {

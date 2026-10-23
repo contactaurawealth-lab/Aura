@@ -63,6 +63,20 @@ class MainActivity : ComponentActivity() {
             val completedBreathingCount by container.database.breathingDao().getCompletedCount().collectAsState(initial = 0)
             val voiceNotesCount by container.database.voiceNoteDao().getNoteCount().collectAsState(initial = 0)
 
+            val startOfToday = remember {
+                val cal = java.util.Calendar.getInstance().apply {
+                    set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    set(java.util.Calendar.MINUTE, 0)
+                    set(java.util.Calendar.SECOND, 0)
+                    set(java.util.Calendar.MILLISECOND, 0)
+                }
+                cal.timeInMillis
+            }
+            val todayFocusSessions by container.database.focusDao().getTodaySessions(startOfToday).collectAsState(initial = emptyList())
+            val todayFocusedSeconds = remember(todayFocusSessions) {
+                todayFocusSessions.filter { it.completed }.sumOf { it.durationSeconds }
+            }
+
             // Audio Playback & Ambient Mixer State
             val playbackState by container.audioPlaybackManager.playbackState.collectAsState()
             val ambientMixerState by container.ambientSoundscapeMixer.mixerState.collectAsState()
@@ -236,7 +250,7 @@ class MainActivity : ComponentActivity() {
                         folders = folders,
                         latestMood = latestMood,
                         latestVoiceNote = voiceNotes.firstOrNull(),
-                        todayFocusedSeconds = totalFocusSec ?: 0L,
+                        todayFocusedSeconds = todayFocusedSeconds,
                         totalMeditationSeconds = totalMeditationSec ?: 0L,
                         completedMeditationCount = completedMeditationCount,
                         totalFocusSeconds = totalFocusSec ?: 0L,
@@ -327,13 +341,15 @@ class MainActivity : ComponentActivity() {
                         },
                         onDeletePlaylist = { playlistId ->
                             scope.launch {
+                                container.database.playlistDao().deleteCrossRefsForPlaylist(playlistId)
                                 container.database.playlistDao().deletePlaylist(playlistId)
                             }
                         },
                         onAddTrackToPlaylist = { playlistId, trackId ->
                             scope.launch {
+                                val currentCount = container.database.playlistDao().getTrackCountSync(playlistId)
                                 container.database.playlistDao().insertCrossRef(
-                                    PlaylistTrackCrossRef(playlistId, trackId)
+                                    PlaylistTrackCrossRef(playlistId, trackId, sortOrder = currentCount)
                                 )
                             }
                         },
@@ -344,6 +360,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onDeleteAudioTrack = { track ->
                             scope.launch {
+                                container.database.audioDao().deleteCrossRefsForTrack(track.id)
                                 container.audioImportManager.deleteTrack(track)
                             }
                         },
@@ -408,11 +425,12 @@ class MainActivity : ComponentActivity() {
                         },
                         onEndFocusSession = { elapsed, target, completed ->
                             scope.launch {
+                                val sessionIntention = activeFocusSession?.second?.ifBlank { "Focus Session" } ?: "Focus Session"
                                 container.userPreferencesRepository.clearActiveFocusSession()
                                 container.audioPlaybackManager.stop()
                                 container.database.focusDao().insertSession(
                                     FocusSessionEntity(
-                                        intention = "Focus Session",
+                                        intention = sessionIntention,
                                         durationSeconds = elapsed,
                                         targetDurationSeconds = target,
                                         completed = completed,
@@ -453,6 +471,9 @@ class MainActivity : ComponentActivity() {
                             scope.launch {
                                 container.userPreferencesRepository.setAssistantEnabled(enabled)
                             }
+                        },
+                        getTracksForPlaylist = { playlistId ->
+                            container.database.playlistDao().getTracksForPlaylist(playlistId)
                         }
                     )
                 }

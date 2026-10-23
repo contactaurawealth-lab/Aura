@@ -18,6 +18,7 @@ import com.aura.app.core.recording.SpeechTranscriptionEngine
 import com.aura.app.core.recording.VoiceRecorder
 import com.aura.app.feature.appblocker.AppBlockerScreen
 import com.aura.app.feature.breathing.BreathingScreen
+import kotlinx.coroutines.flow.Flow
 import com.aura.app.feature.explore.ExploreScreen
 import com.aura.app.feature.focus.FocusScreen
 import com.aura.app.feature.history.HistoryScreen
@@ -96,7 +97,8 @@ fun AuraNavHost(
     onSaveMood: (String, String) -> Unit,
     onSetTheme: (String) -> Unit,
     onSetReducedMotion: (Boolean) -> Unit,
-    onSetAssistantEnabled: (Boolean) -> Unit
+    onSetAssistantEnabled: (Boolean) -> Unit,
+    getTracksForPlaylist: (String) -> Flow<List<AudioTrackEntity>> = { kotlinx.coroutines.flow.emptyFlow() }
 ) {
     NavHost(
         navController = navController,
@@ -177,13 +179,12 @@ fun AuraNavHost(
             route = Screen.PlaylistDetail.route,
             arguments = listOf(navArgument("playlistId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val playlistId = backStackEntry.arguments?.getString("playlistId")
+            val playlistId = backStackEntry.arguments?.getString("playlistId") ?: ""
             val playlist = playlists.firstOrNull { it.id == playlistId }
-            // For cross-ref tracks, filter by playlist
-            // In AuraDatabase, we can filter or use allTracks
+            val playlistTracks by getTracksForPlaylist(playlistId).collectAsState(initial = emptyList())
             PlaylistDetailScreen(
                 playlist = playlist,
-                tracks = allTracks.filter { it.category != "Imported" || it.id in listOf("track_rainfall", "track_singing_bowl", "track_ocean") },
+                tracks = playlistTracks,
                 availableTracks = allTracks,
                 onPlayTrack = { track ->
                     onPlayTrack(track)

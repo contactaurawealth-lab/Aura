@@ -43,6 +43,9 @@ interface AudioDao {
 
     @Query("DELETE FROM audio_tracks WHERE id = :id")
     suspend fun deleteTrack(id: String)
+
+    @Query("DELETE FROM playlist_tracks WHERE trackId = :trackId")
+    suspend fun deleteCrossRefsForTrack(trackId: String)
 }
 
 @Dao
@@ -68,6 +71,9 @@ interface PlaylistDao {
     @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId")
     suspend fun removeTrackFromPlaylist(playlistId: String, trackId: String)
 
+    @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId")
+    suspend fun deleteCrossRefsForPlaylist(playlistId: String)
+
     @Query("""
         SELECT a.* FROM audio_tracks a
         INNER JOIN playlist_tracks pt ON a.id = pt.trackId
@@ -78,6 +84,9 @@ interface PlaylistDao {
 
     @Query("SELECT COUNT(*) FROM playlist_tracks WHERE playlistId = :playlistId")
     fun getTrackCountForPlaylist(playlistId: String): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM playlist_tracks WHERE playlistId = :playlistId")
+    suspend fun getTrackCountSync(playlistId: String): Int
 }
 
 @Dao

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -49,7 +50,15 @@ fun BreathingScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator }
+    val vibrator = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vm?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+    }
 
     val patterns = listOf(
         BreathPattern("Box Breathing", 4, 4, 4, 4),

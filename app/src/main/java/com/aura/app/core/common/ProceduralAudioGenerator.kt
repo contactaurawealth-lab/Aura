@@ -1,6 +1,7 @@
 package com.aura.app.core.common
 
 import android.content.Context
+import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
@@ -58,70 +59,75 @@ object ProceduralAudioGenerator {
         val bitsPerSample = 16
         val byteRate = sampleRate * numChannels * (bitsPerSample / 8)
 
-        val fos = FileOutputStream(outputFile)
-        // Placeholder for 44-byte WAV header
-        fos.write(ByteArray(44))
+        BufferedOutputStream(FileOutputStream(outputFile), 32768).use { bos ->
+            // Placeholder for 44-byte WAV header
+            bos.write(ByteArray(44))
 
-        val buffer = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
-        var lastBrown = 0.0
+            val buffer = ByteBuffer.allocate(4096).order(ByteOrder.LITTLE_ENDIAN)
+            var lastBrown = 0.0
 
-        for (i in 0 until numSamples) {
-            val t = i.toDouble() / sampleRate
-            val sampleVal: Double = when (type) {
-                SoundType.RAIN -> {
-                    val white = Random.nextDouble(-1.0, 1.0)
-                    lastBrown = (lastBrown * 0.85) + (white * 0.15)
-                    val drop = if (Random.nextInt(1000) < 5) sin(2 * PI * 1200 * t) * 0.4 else 0.0
-                    (lastBrown * 0.6 + drop).coerceIn(-1.0, 1.0)
+            for (i in 0 until numSamples) {
+                val t = i.toDouble() / sampleRate
+                val sampleVal: Double = when (type) {
+                    SoundType.RAIN -> {
+                        val white = Random.nextDouble(-1.0, 1.0)
+                        lastBrown = (lastBrown * 0.85) + (white * 0.15)
+                        val drop = if (Random.nextInt(1000) < 5) sin(2 * PI * 1200 * t) * 0.4 else 0.0
+                        (lastBrown * 0.6 + drop).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.FOREST_STREAM -> {
+                        val white = Random.nextDouble(-1.0, 1.0)
+                        lastBrown = (lastBrown * 0.92) + (white * 0.08)
+                        val wave = sin(2 * PI * 0.25 * t) * 0.2
+                        (lastBrown * 0.7 + wave).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.SINGING_BOWL -> {
+                        val envelope = exp(-t * 0.25)
+                        val fundamental = sin(2 * PI * 432.0 * t)
+                        val harmonic = sin(2 * PI * 864.0 * t) * 0.25
+                        val beat = sin(2 * PI * 1.5 * t) * 0.1
+                        ((fundamental + harmonic + beat) * envelope * 0.75).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.BROWN_NOISE -> {
+                        val white = Random.nextDouble(-1.0, 1.0)
+                        lastBrown = (lastBrown * 0.96) + (white * 0.04)
+                        (lastBrown * 0.8).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.MEDITATION_BELL -> {
+                        val envelope = exp(-t * 0.4)
+                        val bell = sin(2 * PI * 528.0 * t) + sin(2 * PI * 1056.0 * t) * 0.3
+                        (bell * envelope * 0.8).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.OCEAN_WAVES -> {
+                        // Periodic swell with surf cresting
+                        val white = Random.nextDouble(-1.0, 1.0)
+                        lastBrown = (lastBrown * 0.94) + (white * 0.06)
+                        val surge = (sin(2 * PI * 0.12 * t) + 1.0) * 0.5 // 0.0 to 1.0 swell
+                        (lastBrown * (0.3 + 0.7 * surge)).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.GENTLE_WIND -> {
+                        val white = Random.nextDouble(-1.0, 1.0)
+                        lastBrown = (lastBrown * 0.90) + (white * 0.10)
+                        val gust = sin(2 * PI * 0.18 * t) * sin(2 * PI * 0.05 * t) * 0.35
+                        (lastBrown * 0.6 + gust).coerceIn(-1.0, 1.0)
+                    }
+                    SoundType.WHITE_NOISE -> {
+                        val white = Random.nextDouble(-1.0, 1.0)
+                        (white * 0.35).coerceIn(-1.0, 1.0)
+                    }
                 }
-                SoundType.FOREST_STREAM -> {
-                    val white = Random.nextDouble(-1.0, 1.0)
-                    lastBrown = (lastBrown * 0.92) + (white * 0.08)
-                    val wave = sin(2 * PI * 0.25 * t) * 0.2
-                    (lastBrown * 0.7 + wave).coerceIn(-1.0, 1.0)
-                }
-                SoundType.SINGING_BOWL -> {
-                    val envelope = exp(-t * 0.25)
-                    val fundamental = sin(2 * PI * 432.0 * t)
-                    val harmonic = sin(2 * PI * 864.0 * t) * 0.25
-                    val beat = sin(2 * PI * 1.5 * t) * 0.1
-                    ((fundamental + harmonic + beat) * envelope * 0.75).coerceIn(-1.0, 1.0)
-                }
-                SoundType.BROWN_NOISE -> {
-                    val white = Random.nextDouble(-1.0, 1.0)
-                    lastBrown = (lastBrown * 0.96) + (white * 0.04)
-                    (lastBrown * 0.8).coerceIn(-1.0, 1.0)
-                }
-                SoundType.MEDITATION_BELL -> {
-                    val envelope = exp(-t * 0.4)
-                    val bell = sin(2 * PI * 528.0 * t) + sin(2 * PI * 1056.0 * t) * 0.3
-                    (bell * envelope * 0.8).coerceIn(-1.0, 1.0)
-                }
-                SoundType.OCEAN_WAVES -> {
-                    // Periodic swell with surf cresting
-                    val white = Random.nextDouble(-1.0, 1.0)
-                    lastBrown = (lastBrown * 0.94) + (white * 0.06)
-                    val surge = (sin(2 * PI * 0.12 * t) + 1.0) * 0.5 // 0.0 to 1.0 swell
-                    (lastBrown * (0.3 + 0.7 * surge)).coerceIn(-1.0, 1.0)
-                }
-                SoundType.GENTLE_WIND -> {
-                    val white = Random.nextDouble(-1.0, 1.0)
-                    lastBrown = (lastBrown * 0.90) + (white * 0.10)
-                    val gust = sin(2 * PI * 0.18 * t) * sin(2 * PI * 0.05 * t) * 0.35
-                    (lastBrown * 0.6 + gust).coerceIn(-1.0, 1.0)
-                }
-                SoundType.WHITE_NOISE -> {
-                    val white = Random.nextDouble(-1.0, 1.0)
-                    (white * 0.35).coerceIn(-1.0, 1.0)
+
+                val shortVal = (sampleVal * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+                buffer.putShort(shortVal)
+                if (!buffer.hasRemaining()) {
+                    bos.write(buffer.array(), 0, buffer.position())
+                    buffer.clear()
                 }
             }
-
-            val shortVal = (sampleVal * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
-            buffer.clear()
-            buffer.putShort(shortVal)
-            fos.write(buffer.array())
+            if (buffer.position() > 0) {
+                bos.write(buffer.array(), 0, buffer.position())
+            }
         }
-        fos.close()
 
         val totalAudioLen = (numSamples * numChannels * (bitsPerSample / 8)).toLong()
         val totalDataLen = totalAudioLen + 36
@@ -136,9 +142,9 @@ object ProceduralAudioGenerator {
         channels: Int,
         byteRate: Long
     ) {
-        val raf = RandomAccessFile(file, "rw")
-        raf.seek(0)
-        val header = ByteArray(44)
+        RandomAccessFile(file, "rw").use { raf ->
+            raf.seek(0)
+            val header = ByteArray(44)
         header[0] = 'R'.code.toByte()
         header[1] = 'I'.code.toByte()
         header[2] = 'F'.code.toByte()
@@ -184,6 +190,6 @@ object ProceduralAudioGenerator {
         header[42] = ((totalAudioLen shr 16) and 0xff).toByte()
         header[43] = ((totalAudioLen shr 24) and 0xff).toByte()
         raf.write(header)
-        raf.close()
+        }
     }
 }
