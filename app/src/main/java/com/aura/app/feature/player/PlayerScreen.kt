@@ -156,13 +156,22 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Progress Slider
+            var isDraggingSlider by remember { mutableStateOf(false) }
+            var dragFraction by remember { mutableStateOf(0f) }
+
             val duration = if (playbackState.durationMs > 0) playbackState.durationMs else (track?.durationMs ?: 1L).coerceAtLeast(1L)
-            val progress = (playbackState.currentPositionMs.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+            val liveProgress = (playbackState.currentPositionMs.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+            val sliderValue = if (isDraggingSlider) dragFraction else liveProgress
 
             Slider(
-                value = progress,
+                value = sliderValue,
                 onValueChange = { frac ->
-                    onSeekTo((frac * duration).toLong())
+                    isDraggingSlider = true
+                    dragFraction = frac
+                },
+                onValueChangeFinished = {
+                    onSeekTo((dragFraction * duration).toLong())
+                    isDraggingSlider = false
                 },
                 colors = SliderDefaults.colors(
                     thumbColor = SageBrand,
@@ -172,12 +181,13 @@ fun PlayerScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            val displayPositionMs = if (isDraggingSlider) (dragFraction * duration).toLong() else playbackState.currentPositionMs
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = Formatters.formatTimer(playbackState.currentPositionMs / 1000),
+                    text = Formatters.formatTimer(displayPositionMs / 1000),
                     style = MaterialTheme.typography.labelSmall,
                     color = SecondaryText
                 )

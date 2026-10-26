@@ -116,7 +116,15 @@ class InterruptionActivity : ComponentActivity() {
                                 color = StoneNeutral
                             )
                         } else {
-                            TextButton(onClick = { finish() }) {
+                            TextButton(
+                                onClick = {
+                                    val blockedPkg = intent.getStringExtra("blocked_package")
+                                    if (blockedPkg != null) {
+                                        AppBlockerBypass.grantBypass(blockedPkg, 120_000L)
+                                    }
+                                    finish()
+                                }
+                            ) {
                                 Text(
                                     text = "Continue anyway (2 min pass)",
                                     style = MaterialTheme.typography.labelMedium,

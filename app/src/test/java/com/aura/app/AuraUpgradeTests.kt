@@ -6,6 +6,7 @@ import com.aura.app.core.database.*
 import com.aura.app.core.journal.JournalIntelligence
 import com.aura.app.core.recording.AndroidSpeechTranscriptionEngine
 import com.aura.app.core.recording.TranscriptSegment
+import com.aura.app.feature.appblocker.AppBlockerBypass
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -154,5 +155,20 @@ class AuraUpgradeTests {
         assertEquals(1, nextIndex)
         val nextTrack = state.queue[nextIndex]
         assertEquals("Track 2", nextTrack.title)
+    }
+
+    @Test
+    fun testAppBlockerBypassLogic() {
+        val testPkg = "com.example.distracting.app"
+        AppBlockerBypass.clear()
+        assertFalse(AppBlockerBypass.isBypassed(testPkg))
+
+        // Grant 2 minute bypass
+        AppBlockerBypass.grantBypass(testPkg, durationMs = 120_000L)
+        assertTrue(AppBlockerBypass.isBypassed(testPkg))
+
+        // Expired bypass test
+        AppBlockerBypass.grantBypass(testPkg, durationMs = -1000L)
+        assertFalse(AppBlockerBypass.isBypassed(testPkg))
     }
 }

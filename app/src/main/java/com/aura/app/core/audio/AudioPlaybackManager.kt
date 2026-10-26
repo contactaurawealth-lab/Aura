@@ -259,6 +259,7 @@ class AudioPlaybackManager(private val context: Context) {
             Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
             else -> Player.REPEAT_MODE_OFF
         }
+        controller?.repeatMode = nextMode
         _playbackState.value = _playbackState.value.copy(repeatMode = nextMode)
     }
 

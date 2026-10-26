@@ -38,8 +38,16 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.aura.app.AuraApplication
 import com.aura.app.MainActivity
@@ -47,12 +55,41 @@ import com.aura.app.R
 import com.aura.app.core.designsystem.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+
+private class OverlayLifecycleOwner : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+    private val store = ViewModelStore()
+
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+    override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
+    override val viewModelStore: ViewModelStore get() = store
+
+    fun onCreate() {
+        savedStateRegistryController.performRestore(null)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    }
+
+    fun onStart() {
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    }
+
+    fun onDestroy() {
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        store.clear()
+    }
+}
 
 class FloatingAssistantService : Service() {
 
     private var windowManager: WindowManager? = null
     private var overlayView: ComposeView? = null
+    private var lifecycleOwner: OverlayLifecycleOwner? = null
     private var isExpanded = false
 
     private val scope = CoroutineScope(Dispatchers.Main)
@@ -115,7 +152,16 @@ class FloatingAssistantService : Service() {
             y = 350
         }
 
+        val owner = OverlayLifecycleOwner().apply {
+            onCreate()
+            onStart()
+        }
+        lifecycleOwner = owner
+
         overlayView = ComposeView(this).apply {
+            setViewTreeLifecycleOwner(owner)
+            setViewTreeSavedStateRegistryOwner(owner)
+            setViewTreeViewModelStoreOwner(owner)
             setContent {
                 AuraTheme {
                     var expanded by remember { mutableStateOf(false) }
@@ -332,6 +378,9 @@ class FloatingAssistantService : Service() {
     }
 
     override fun onDestroy() {
+        lifecycleOwner?.onDestroy()
+        lifecycleOwner = null
+        scope.cancel()
         if (overlayView != null) {
             try {
                 windowManager?.removeView(overlayView)

@@ -169,9 +169,6 @@ class VoiceRecorder(private val context: Context) {
 
         return try {
             recorder.stop()
-            recorder.release()
-            mediaRecorder = null
-            isPaused = false
             if (file != null && file.exists()) {
                 _recordingState.value = RecordingState.Completed(file, finalDuration)
                 file
@@ -183,6 +180,13 @@ class VoiceRecorder(private val context: Context) {
             _recordingState.value = RecordingState.Error("Error finalizing recording: ${e.message}")
             file?.delete()
             null
+        } finally {
+            try {
+                recorder.release()
+            } catch (ignored: Exception) {}
+            mediaRecorder = null
+            currentFile = null
+            isPaused = false
         }
     }
 
@@ -190,11 +194,14 @@ class VoiceRecorder(private val context: Context) {
         handler.removeCallbacks(amplitudeRunnable)
         try {
             mediaRecorder?.stop()
-            mediaRecorder?.release()
         } catch (e: Exception) {
             // Ignore
+        } finally {
+            try {
+                mediaRecorder?.release()
+            } catch (ignored: Exception) {}
+            mediaRecorder = null
         }
-        mediaRecorder = null
         currentFile?.delete()
         currentFile = null
         isPaused = false

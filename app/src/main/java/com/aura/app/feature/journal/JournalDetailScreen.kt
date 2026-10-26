@@ -567,7 +567,7 @@ fun JournalDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    Divider(color = BorderDivider)
+                    HorizontalDivider(color = BorderDivider)
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
